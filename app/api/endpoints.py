@@ -101,17 +101,13 @@ async def _run_engine(request: DiagnosisRequest) -> list:
 from app.api.deps import get_current_user
 from app.models.user import User
 
-@router.post(
-    "/diagnose",
-    response_model=DiagnosisResponse,
-    summary="Diagnosa serangan siber berdasarkan gejala"
-)
-async def diagnose(
+async def _handle_detect(
     request: DiagnosisRequest,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-    redis=Depends(get_redis)
-):
+    current_user: User,
+    db: AsyncSession,
+    redis,
+) -> DiagnosisResponse:
+    """Logika utama deteksi via gejala manual. Dipakai oleh /detect dan /diagnose."""
     start_time = time.time()
     cache_key = _build_cache_key(request)
 
@@ -166,17 +162,50 @@ async def diagnose(
     cache_data.pop("from_cache")
     await redis.setex(cache_key, 3600, json.dumps(cache_data, default=str))
 
-    await HistoryRepository.create_consultation_history(db=db, 
+    await HistoryRepository.create_consultation_history(
+        db=db,
         session_id=session_id,
         symptoms=request.symptoms,
         target_system=request.target_system,
         detected_attacks=[a.model_dump() for a in detected_attacks],
         duration_ms=duration_ms
     )
-    
-    
 
     return response
+
+
+@router.post(
+    "/detect",
+    response_model=DiagnosisResponse,
+    summary="[Primary] Deteksi serangan siber berdasarkan gejala (symptoms)"
+)
+async def detect(
+    request: DiagnosisRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis)
+):
+    """
+    Endpoint utama untuk deteksi via gejala manual.
+    Gunakan ini dari frontend untuk analisis log/gejala yang sudah dikumpulkan.
+    """
+    return await _handle_detect(request, current_user, db, redis)
+
+
+@router.post(
+    "/diagnose",
+    response_model=DiagnosisResponse,
+    summary="[Alias] Sama dengan /detect — dipertahankan untuk backward compatibility",
+    include_in_schema=True
+)
+async def diagnose(
+    request: DiagnosisRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis)
+):
+    """Alias dari /detect. Tetap bisa dipakai agar tidak breaking change."""
+    return await _handle_detect(request, current_user, db, redis)
 
 @router.post(
     "/scan",

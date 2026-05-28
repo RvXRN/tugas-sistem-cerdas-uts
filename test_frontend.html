@@ -93,7 +93,7 @@
 
             try {
                 // Tembak ke API lokal
-                const response = await fetch('http://localhost:8081/api/v1/diagnose', {
+                const response = await fetch('http://localhost:8081/api/v1/detect', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
