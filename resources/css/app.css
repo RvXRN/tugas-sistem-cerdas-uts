@@ -1,0 +1,51 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap');
+
+@theme {
+    --color-gray-950: #0b0f19;
+    --color-glass: rgba(20, 27, 45, 0.65);
+    --color-glass-border: rgba(59, 130, 246, 0.2);
+    --font-inter: 'Inter', sans-serif;
+    --font-outfit: 'Outfit', sans-serif;
+}
+
+/* Glass panel */
+.glass-panel {
+    @apply bg-glass backdrop-blur-md border border-glass-border rounded-2xl shadow-xl transition-all duration-300;
+}
+.glass-panel:hover {
+    @apply -translate-y-0.5 shadow-2xl border-blue-500/40;
+}
+
+/* Form input */
+.input-control {
+    @apply w-full px-4 py-3 bg-slate-900/60 border border-white/10 rounded-lg text-gray-100 font-inter transition-all duration-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25;
+}
+
+/* Base body */
+body {
+    @apply bg-gray-950 text-gray-100 min-h-screen overflow-x-hidden font-inter;
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.08), transparent 25%);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    @apply font-outfit font-semibold;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #0b0f19; 
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1); 
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.2); 
+}
