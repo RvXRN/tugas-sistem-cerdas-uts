@@ -25,6 +25,20 @@ def _build_cache_key(request: DiagnosisRequest) -> str:
     payload = f"{sorted_symptoms}:{request.target_system}:{request.severity_hint}"
     return f"diagnosis:{hashlib.md5(payload.encode()).hexdigest()}"
 
+
+# Mapping MITRE ATT&CK fallback — dipakai jika Experta tidak fire rule-nya
+_MITRE_FALLBACK: dict[str, str] = {
+    "Reconnaissance":                       "TA0043",
+    "Brute Force Attack":                   "T1110",
+    "SQL Injection":                        "T1190",
+    "Distributed Denial of Service (DDoS)": "T1498",
+    "Cross-Site Scripting (XSS)":           "T1059.007",
+    "Man-in-the-Middle (MitM)":             "T1557",
+    "Phishing":                             "T1566",
+    "Ransomware":                           "T1486",
+}
+
+
 async def _run_engine(request: DiagnosisRequest) -> list:
     """
     Gabungan Forward Chaining (Experta) + Certainty Factor.
@@ -57,21 +71,26 @@ async def _run_engine(request: DiagnosisRequest) -> list:
         attack_type = cf_result["attack_type"]
         experta_data = experta_attacks.get(attack_type, {})
 
+        # MITRE: ambil dari Experta jika ada, fallback ke mapping statis
+        mitre_id = experta_data.get("mitre_id") or _MITRE_FALLBACK.get(attack_type)
+
+        # Rekomendasi: prioritaskan Experta, fallback ke rekomendasi di CF rules
+        recommendations = experta_data.get("recommendations") or cf_result.get("recommendations", [])
+
         final_results.append({
             "attack_type": attack_type,
             "confidence": cf_result["confidence"],
             "matched_symptoms": cf_result["matched_symptoms"],
             "description": experta_data.get("description", "Aktivitas mencurigakan terdeteksi (berdasarkan confidence factor)."),
-            "mitre_id": experta_data.get("mitre_id"),
-            "recommendations": experta_data.get("recommendations", []),
+            "mitre_id": mitre_id,
+            "recommendations": recommendations,
         })
 
     # Step 4: ML Fallback jika CF/Experta gagal deteksi
     if not final_results:
         ml_engine = MLCybersecurityEngine()
         ml_results = ml_engine.predict(symptoms=request.symptoms, target_system=request.target_system)
-        
-        # Format output ML sama dengan Experta
+
         for ml_res in ml_results:
             final_results.append({
                 "attack_type": ml_res["attack_type"],

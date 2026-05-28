@@ -54,10 +54,19 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS untuk koneksi dari Next.js
+# CORS untuk koneksi dari Next.js / file:// lokal
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:3000"],
+    allow_origins=[
+        settings.FRONTEND_URL,
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://localhost:8081",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:8081",
+        "null",   # untuk file:// (browser kirim Origin: null)
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
