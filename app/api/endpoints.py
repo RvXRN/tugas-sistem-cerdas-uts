@@ -5,13 +5,14 @@ import hashlib
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.diagnosis import DiagnosisRequest, DiagnosisResponse, AttackResult, DefenseRecommendation
+from app.schemas.diagnosis import DiagnosisRequest, DiagnosisResponse, AttackResult, DefenseRecommendation, ScanRequest
 from app.engine.knowledge_base import CybersecurityExpertEngine
 from app.engine.facts import AttackSymptom, TargetSystem, DetectedAttack
 from app.ml.engine import MLCybersecurityEngine
 from app.core.database import get_db, get_redis
 from app.repositories.history_repository import HistoryRepository
 from app.engine.certainty_factor import diagnose_with_cf
+from app.services.scanner_service import scan_url
 
 router = APIRouter(prefix="/api/v1", tags=["Diagnosis"])
 
@@ -170,5 +171,97 @@ async def diagnose(
     )
     
     
+
+    return response
+
+@router.post(
+    "/scan",
+    response_model=DiagnosisResponse,
+    summary="Active scanning pada URL target untuk mendeteksi kerentanan"
+)
+async def active_scan(
+    request: ScanRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis)
+):
+    start_time = time.time()
+    url_str = str(request.url)
+    
+    # 1. Lakukan active scanning
+    extracted_symptoms = await scan_url(url_str)
+    
+    # Jika tidak ada gejala yang ditemukan
+    if not extracted_symptoms:
+        session_id = str(uuid.uuid4())
+        return DiagnosisResponse(
+            session_id=session_id,
+            detected_attacks=[AttackResult(
+                attack_type="Safe / No Vulnerability Detected",
+                confidence=1.0,
+                description=f"Tidak ditemukan indikasi kerentanan XSS atau SQLi dari pemindaian dasar pada {url_str}.",
+                mitre_id=None
+            )],
+            defense_recommendations=[DefenseRecommendation(
+                priority=1,
+                action="Tetap pantau log server dan lakukan penetration testing secara rutin.",
+                tool_suggestion="OWASP ZAP / BurpSuite"
+            )],
+            analysis_duration_ms=round((time.time() - start_time) * 1000, 2),
+            from_cache=False
+        )
+
+    # 2. Buat objek DiagnosisRequest dari gejala yang ditemukan
+    diag_req = DiagnosisRequest(
+        symptoms=extracted_symptoms,
+        target_system="web_server"
+    )
+
+    # 3. Jalankan Engine
+    try:
+        detected_facts = await _run_engine(diag_req)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Engine error: {str(e)}"
+        )
+
+    # 4. Format Output
+    detected_attacks = []
+    all_recommendations = []
+
+    for fact in detected_facts:
+        detected_attacks.append(AttackResult(
+            attack_type=fact["attack_type"],
+            confidence=fact["confidence"],
+            description=fact.get("description", ""),
+            mitre_id=fact.get("mitre_id")
+        ))
+        for rec in fact.get("recommendations", []):
+            all_recommendations.append(DefenseRecommendation(
+                priority=rec["priority"],
+                action=rec["action"],
+                tool_suggestion=rec.get("tool")
+            ))
+
+    all_recommendations.sort(key=lambda x: x.priority)
+    duration_ms = (time.time() - start_time) * 1000
+    session_id = str(uuid.uuid4())
+
+    response = DiagnosisResponse(
+        session_id=session_id,
+        detected_attacks=detected_attacks,
+        defense_recommendations=all_recommendations,
+        analysis_duration_ms=round(duration_ms, 2),
+        from_cache=False
+    )
+    
+    await HistoryRepository.create_consultation_history(db=db, 
+        session_id=session_id,
+        symptoms=extracted_symptoms,
+        target_system="web_server",
+        detected_attacks=[a.model_dump() for a in detected_attacks],
+        duration_ms=duration_ms
+    )
 
     return response

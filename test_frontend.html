@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pakar Cybersecurity - Tester</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+        .container { display: flex; gap: 20px; }
+        .panel { flex: 1; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        h3 { margin-top: 0; }
+        label { display: block; margin-bottom: 5px; cursor: pointer; }
+        select, button { width: 100%; padding: 10px; margin-top: 10px; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; font-size: 12px; }
+        .attack { border-left: 4px solid #dc3545; padding-left: 10px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>Tester API Sistem Pakar</h2>
+    <p>Pastikan backend berjalan di <code>http://localhost:8000</code> sebelum klik tombol.</p>
+
+    <div class="container">
+        <!-- Form Input -->
+        <div class="panel">
+            <h3>Mode 1: Input Manual (Sistem Pakar)</h3>
+            <h3>Pilih Gejala</h3>
+            <div id="symptoms">
+                <label><input type="checkbox" value="port_scanning"> Port Scanning</label>
+                <label><input type="checkbox" value="os_fingerprinting"> OS Fingerprinting</label>
+                <label><input type="checkbox" value="brute_force_login"> Brute Force Login</label>
+                <label><input type="checkbox" value="multiple_failed_auth"> Multiple Failed Auth</label>
+                <label><input type="checkbox" value="sql_injection_pattern"> SQL Injection Pattern</label>
+                <label><input type="checkbox" value="unusual_db_query"> Unusual DB Query</label>
+                <label><input type="checkbox" value="high_traffic_volume"> High Traffic Volume</label>
+                <label><input type="checkbox" value="xss_payload_detected"> XSS Payload Detected</label>
+                <label><input type="checkbox" value="arp_spoofing"> ARP Spoofing</label>
+                <label><input type="checkbox" value="suspicious_email_link"> Suspicious Email Link</label>
+                <label><input type="checkbox" value="mass_file_encryption"> Mass File Encryption</label>
+                <label><input type="checkbox" value="random_weird_error"> Random Weird Error (Test ML)</label>
+            </div>
+
+            <h3 style="margin-top: 20px;">Target Sistem</h3>
+            <select id="target_system">
+                <option value="web_server">Web Server</option>
+                <option value="database">Database</option>
+                <option value="network">Network</option>
+                <option value="user_endpoint">User Endpoint</option>
+            </select>
+
+            <button onclick="diagnose()">Diagnosa Manual</button>
+            <hr style="margin: 20px 0;">
+            
+            <h3>Mode 2: Active Scanner (Auditor)</h3>
+            <p style="font-size: 12px; color: #555;">Sistem akan mencoba menembakkan payload SQLi & XSS ke URL ini untuk mengekstrak gejala secara otomatis.</p>
+            <label>Target URL:</label>
+            <input type="url" id="scan_url" placeholder="http://localhost:8080/vulnerable_page" style="width: 100%; padding: 8px; box-sizing: border-box;">
+            <button onclick="activeScan()" style="background-color: #28a745;">Mulai Active Scan</button>
+        </div>
+
+        <!-- Result Panel -->
+        <div class="panel">
+            <h3>Hasil Analisis</h3>
+            <div id="loading" style="display:none;">Memproses...</div>
+            <div id="result"><i>Hasil akan muncul di sini</i></div>
+            <h4>Raw JSON:</h4>
+            <pre id="raw_json">{}</pre>
+        </div>
+    </div>
+
+    <script>
+        async function diagnose() {
+            // Ambil semua gejala yang dicentang
+            const checkboxes = document.querySelectorAll('#symptoms input:checked');
+            const symptoms = Array.from(checkboxes).map(cb => cb.value);
+            const target_system = document.getElementById('target_system').value;
+
+            if (symptoms.length === 0) {
+                alert("Pilih minimal 1 gejala!");
+                return;
+            }
+
+            const payload = {
+                symptoms: symptoms,
+                target_system: target_system
+            };
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('raw_json').innerText = 'Loading...';
+
+            try {
+                // Tembak ke API lokal
+                const response = await fetch('http://localhost:8000/api/v1/diagnose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                document.getElementById('raw_json').innerText = JSON.stringify(data, null, 2);
+                
+                if (response.ok) {
+                    renderResult(data);
+                } else {
+                    document.getElementById('result').innerHTML = `<p style="color:red">Error API: ${data.detail || 'Unknown error'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p style="color:red">Gagal koneksi. Apakah server Uvicorn/FastAPI sudah jalan di port 8000?</p>`;
+                document.getElementById('raw_json').innerText = error.message;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function activeScan() {
+            const url = document.getElementById('scan_url').value;
+
+            if (!url) {
+                alert("Masukkan URL target!");
+                return;
+            }
+
+            const payload = { url: url };
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('raw_json').innerText = 'Scanning & Diagnosing...';
+
+            try {
+                // Tembak ke API Scan
+                const response = await fetch('http://localhost:8000/api/v1/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                document.getElementById('raw_json').innerText = JSON.stringify(data, null, 2);
+                
+                if (response.ok) {
+                    renderResult(data);
+                } else {
+                    document.getElementById('result').innerHTML = `<p style="color:red">Error API: ${data.detail || 'Unknown error'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p style="color:red">Gagal koneksi. Apakah server Uvicorn/FastAPI sudah jalan di port 8000?</p>`;
+                document.getElementById('raw_json').innerText = error.message;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function renderResult(data) {
+            const container = document.getElementById('result');
+            let html = `<b>Session ID:</b> ${data.session_id}<br><b>Waktu Eksekusi:</b> ${data.analysis_duration_ms} ms<hr>`;
+
+            if (data.detected_attacks && data.detected_attacks.length > 0) {
+                data.detected_attacks.forEach(attack => {
+                    const cfPercent = (attack.confidence * 100).toFixed(1);
+                    html += `
+                        <div class="attack">
+                            <h4 style="margin:0; color:#dc3545">${attack.attack_type}</h4>
+                            <p style="margin:5px 0; font-size:14px;"><b>Confidence:</b> ${cfPercent}% | <b>MITRE:</b> ${attack.mitre_id || 'N/A'}</p>
+                            <p style="margin:5px 0; font-size:12px;">${attack.description}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            if (data.defense_recommendations && data.defense_recommendations.length > 0) {
+                html += `<h4>Rekomendasi (Prioritas):</h4><ul style="padding-left: 20px; font-size:13px;">`;
+                data.defense_recommendations.forEach(rec => {
+                    html += `<li><b>P-${rec.priority}:</b> ${rec.action} <br><small><i>(Tool: ${rec.tool_suggestion || '-'})</i></small></li>`;
+                });
+                html += `</ul>`;
+            }
+
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional
 from enum import Enum
 
@@ -62,3 +62,20 @@ class DiagnosisResponse(BaseModel):
     defense_recommendations: List[DefenseRecommendation]
     analysis_duration_ms: float
     from_cache: bool = False
+
+class ScanRequest(BaseModel):
+    """
+    Schema untuk request active scanning.
+    Menerima URL yang akan diuji kerentanannya.
+    """
+    url: HttpUrl = Field(
+        ...,
+        description="URL target yang akan dipindai secara aktif"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "url": "http://localhost:8000"
+            }
+        }
