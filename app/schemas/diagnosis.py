@@ -76,6 +76,6 @@ class ScanRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "url": "http://localhost:8000"
+                "url": "http://localhost:8081"
             }
         }

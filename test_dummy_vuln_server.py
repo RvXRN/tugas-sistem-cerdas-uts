@@ -15,7 +15,7 @@ Kerentanan yang disimulasikan:
 
 Jalankan di terminal terpisah:
     python test_dummy_vuln_server.py
-Lalu uji di Active Scanner dengan URL: http://127.0.0.1:8080/
+Lalu uji di Active Scanner dengan URL: http://127.0.0.1:8082/
 """
 
 from fastapi import FastAPI, Request, Form
@@ -130,6 +130,6 @@ async def contact():
 
 # ─── Entry point ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print("[DUMMY SERVER] Berjalan di http://127.0.0.1:8080")
-    print("[DUMMY SERVER] Gunakan URL ini di Active Scanner: http://127.0.0.1:8080/")
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    print("[DUMMY SERVER] Berjalan di http://127.0.0.1:8082")
+    print("[DUMMY SERVER] Gunakan URL ini di Active Scanner: http://127.0.0.1:8082/")
+    uvicorn.run(app, host="127.0.0.1", port=8082)

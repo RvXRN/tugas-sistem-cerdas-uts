@@ -20,7 +20,7 @@
 <body>
 
     <h2>Tester API Sistem Pakar</h2>
-    <p>Pastikan backend berjalan di <code>http://localhost:8000</code> sebelum klik tombol.</p>
+    <p>Pastikan backend berjalan di <code>http://localhost:8081</code> sebelum klik tombol.</p>
 
     <div class="container">
         <!-- Form Input -->
@@ -56,7 +56,7 @@
             <h3>Mode 2: Active Scanner (Auditor)</h3>
             <p style="font-size: 12px; color: #555;">Sistem akan mencoba menembakkan payload SQLi & XSS ke URL ini untuk mengekstrak gejala secara otomatis.</p>
             <label>Target URL:</label>
-            <input type="url" id="scan_url" placeholder="http://localhost:8080/vulnerable_page" style="width: 100%; padding: 8px; box-sizing: border-box;">
+            <input type="url" id="scan_url" placeholder="http://localhost:8082/vulnerable_page" style="width: 100%; padding: 8px; box-sizing: border-box;">
             <button onclick="activeScan()" style="background-color: #28a745;">Mulai Active Scan</button>
         </div>
 
@@ -93,7 +93,7 @@
 
             try {
                 // Tembak ke API lokal
-                const response = await fetch('http://localhost:8000/api/v1/diagnose', {
+                const response = await fetch('http://localhost:8081/api/v1/diagnose', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -131,7 +131,7 @@
 
             try {
                 // Tembak ke API Scan
-                const response = await fetch('http://localhost:8000/api/v1/scan', {
+                const response = await fetch('http://localhost:8081/api/v1/scan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)

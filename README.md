@@ -11,10 +11,10 @@ API ini dibuat dengan **FastAPI** dan mengembalikan hasil diagnosa berdasarkan g
 Pastikan Anda berada di root direktori proyek (`d:\tugasapipakindrawan`), lalu jalankan server menggunakan Uvicorn:
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
 ```
 
-Jika berhasil, server akan berjalan di: **http://localhost:8000**
+Jika berhasil, server akan berjalan di: **http://localhost:8081**
 
 ---
 
@@ -23,7 +23,7 @@ Jika berhasil, server akan berjalan di: **http://localhost:8000**
 FastAPI secara otomatis men-generate UI interaktif untuk mencoba API tanpa perlu Postman atau kode.
 Buka browser Anda dan kunjungi:
 
-👉 **http://localhost:8000/docs**
+👉 **http://localhost:8081/docs**
 
 Di sana Anda bisa melihat semua endpoint yang tersedia, model datanya, dan langsung mencoba mengirim request (klik tombol **"Try it out"**).
 
@@ -34,7 +34,7 @@ Di sana Anda bisa melihat semua endpoint yang tersedia, model datanya, dan langs
 Ini adalah endpoint paling penting untuk mendiagnosa jenis serangan. 
 
 **Metode**: `POST`  
-**URL**: `http://localhost:8000/api/v1/diagnose`
+**URL**: `http://localhost:8081/api/v1/diagnose`
 
 ### Format Request (JSON)
 Anda wajib mengirimkan array berisi `symptoms` (minimal 1 gejala). `target_system` dan `severity_hint` bersifat opsional.
@@ -89,7 +89,7 @@ Sistem akan mengembalikan jenis serangan yang terdeteksi, tingkat keyakinan (con
 
 ```bash
 curl -X 'POST' \
-  'http://localhost:8000/api/v1/diagnose' \
+  'http://localhost:8081/api/v1/diagnose' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -103,7 +103,7 @@ curl -X 'POST' \
 ```python
 import requests
 
-url = "http://localhost:8000/api/v1/diagnose"
+url = "http://localhost:8081/api/v1/diagnose"
 payload = {
     "symptoms": ["sql_injection_pattern", "unusual_db_query"],
     "target_system": "database",
@@ -128,7 +128,7 @@ Contoh cara memanggil API dari Frontend Next.js atau vanilla JS:
 
 ```javascript
 async function diagnoseAttack(symptoms) {
-  const response = await fetch("http://localhost:8000/api/v1/diagnose", {
+  const response = await fetch("http://localhost:8081/api/v1/diagnose", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -179,7 +179,7 @@ Endpoint ini melakukan **pemindaian aktif** terhadap URL target. Scanner akan se
 8. **Phishing** — Brand impersonation dan credential harvesting detection
 
 **Metode**: `POST`  
-**URL**: `http://localhost:8000/api/v1/scan`  
+**URL**: `http://localhost:8081/api/v1/scan`  
 **Rate Limit**: **5 request/menit per IP** (dilindungi slowapi)
 
 ### Format Request
@@ -193,10 +193,10 @@ Endpoint ini melakukan **pemindaian aktif** terhadap URL target. Scanner akan se
 ### Contoh dengan cURL
 
 ```bash
-curl -X POST 'http://localhost:8000/api/v1/scan' \
+curl -X POST 'http://localhost:8081/api/v1/scan' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json' \
-  -d '{"url": "http://localhost:8080/"}'
+  -d '{"url": "http://localhost:8082/"}'
 ```
 
 ---
@@ -231,13 +231,13 @@ Untuk menguji fitur Active Scanner tanpa menyentuh sistem nyata, gunakan server 
 ```bash
 # Terminal 1 — Jalankan server web rentan (simulasi)
 python test_dummy_vuln_server.py
-# Berjalan di http://127.0.0.1:8080
+# Berjalan di http://127.0.0.1:8082
 
 # Terminal 2 — Jalankan backend utama
 uvicorn app.main:app --reload
 
 # Kemudian buka test_frontend.html di browser dan masukkan:
-# http://127.0.0.1:8080/ pada kolom Active Scanner
+# http://127.0.0.1:8082/ pada kolom Active Scanner
 ```
 
 Server dummy ini mensimulasikan: SQL Injection, XSS, tanpa rate limiting (rentan Brute Force), banner disclosure, brand impersonation (Phishing), dan credential harvesting.
