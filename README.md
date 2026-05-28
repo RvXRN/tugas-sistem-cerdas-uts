@@ -162,3 +162,82 @@ Untuk mendapatkan hasil yang akurat, gunakan nama gejala persis seperti list di 
 - **MitM**: `arp_spoofing`, `ssl_stripping`, `certificate_anomaly`, `dns_spoofing`, `unusual_gateway_mac`, `rogue_dhcp_server`, `packet_interception`, `session_hijacking`, `ssl_certificate_mismatch`, `bgp_hijacking`, `evil_twin_ap`, `ip_spoofing`
 - **Phishing**: `suspicious_email_link`, `domain_spoofing`, `credential_harvesting`, `fake_login_page`, `email_header_anomaly`, `lookalike_domain`, `urgency_in_email`, `malicious_attachment`, `brand_impersonation`, `spear_phishing_indicators`, `whaling_attempt`, `vishing_indicators`
 - **Ransomware**: `mass_file_encryption`, `ransom_note_created`, `shadow_copy_deletion`, `unusual_file_extension`, `c2_communication`, `file_rename_burst`, `backup_deletion`, `registry_modification`, `process_injection`, `lateral_movement`, `data_exfiltration_before_encryption`, `bitcoin_address_in_note`
+
+---
+
+## 🔍 Endpoint Active Scanner: `/api/v1/scan`
+
+Endpoint ini melakukan **pemindaian aktif** terhadap URL target. Scanner akan secara otomatis:
+
+1. **Web Crawling** — Menjelajahi semua halaman internal (BFS)
+2. **Reconnaissance** — Deteksi banner server (`Server`, `X-Powered-By`)
+3. **SQL Injection** — Error-based, UNION-based, Time-based blind, Boolean-blind
+4. **XSS** — Reflected, Event handler injection, Javascript URI injection
+5. **Brute Force** — Rate limit test pada form/endpoint login (20 request)
+6. **DDoS Resilience** — HTTP Flood test (concurrent request)
+7. **SSL / MitM** — Pemeriksaan HTTPS dan HSTS
+8. **Phishing** — Brand impersonation dan credential harvesting detection
+
+**Metode**: `POST`  
+**URL**: `http://localhost:8000/api/v1/scan`  
+**Rate Limit**: **5 request/menit per IP** (dilindungi slowapi)
+
+### Format Request
+
+```json
+{
+  "url": "https://target-yang-anda-miliki.com"
+}
+```
+
+### Contoh dengan cURL
+
+```bash
+curl -X POST 'http://localhost:8000/api/v1/scan' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json' \
+  -d '{"url": "http://localhost:8080/"}'
+```
+
+---
+
+## 🛡️ Keamanan & Penggunaan yang Etis
+
+> [!WARNING]
+> Fitur **Active Scanner** (`/api/v1/scan`) akan mengirimkan payload seperti SQL Injection dan XSS ke URL target. Fitur ini **HANYA boleh digunakan pada sistem yang Anda miliki atau yang Anda telah mendapat izin tertulis untuk melakukan penetration testing**.
+
+### Perlindungan yang sudah diterapkan:
+
+| Layer | Mekanisme |
+|---|---|
+| **Autentikasi** | Semua endpoint memerlukan JWT Bearer Token (`/api/v1/auth/login`) |
+| **Rate Limiting** | Endpoint `/scan` dibatasi **5 request/menit per IP** menggunakan `slowapi` |
+| **Input Validation** | Semua request divalidasi melalui Pydantic Schema |
+| **Redis Caching** | Response identik di-cache 1 jam untuk mengurangi beban engine |
+
+### ⚠️ Penggunaan yang dilarang:
+- Men-scan website milik orang lain tanpa izin
+- Menggunakan API ini sebagai alat serangan nyata
+- Bypass autentikasi untuk mengakses endpoint secara ilegal
+
+Pelanggaran dapat dikenai sanksi berdasarkan **UU ITE Pasal 30 tentang Akses Ilegal terhadap Sistem Elektronik**.
+
+---
+
+## 🧪 Pengujian Lokal (Dummy Vulnerable Server)
+
+Untuk menguji fitur Active Scanner tanpa menyentuh sistem nyata, gunakan server simulasi yang sudah tersedia:
+
+```bash
+# Terminal 1 — Jalankan server web rentan (simulasi)
+python test_dummy_vuln_server.py
+# Berjalan di http://127.0.0.1:8080
+
+# Terminal 2 — Jalankan backend utama
+uvicorn app.main:app --reload
+
+# Kemudian buka test_frontend.html di browser dan masukkan:
+# http://127.0.0.1:8080/ pada kolom Active Scanner
+```
+
+Server dummy ini mensimulasikan: SQL Injection, XSS, tanpa rate limiting (rentan Brute Force), banner disclosure, brand impersonation (Phishing), dan credential harvesting.

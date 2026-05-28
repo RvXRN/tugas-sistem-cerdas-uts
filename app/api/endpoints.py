@@ -2,8 +2,10 @@ import time
 import uuid
 import json
 import hashlib
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.schemas.diagnosis import DiagnosisRequest, DiagnosisResponse, AttackResult, DefenseRecommendation, ScanRequest
 from app.engine.knowledge_base import CybersecurityExpertEngine
@@ -13,6 +15,8 @@ from app.core.database import get_db, get_redis
 from app.repositories.history_repository import HistoryRepository
 from app.engine.certainty_factor import diagnose_with_cf
 from app.services.scanner_service import scan_url
+
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(prefix="/api/v1", tags=["Diagnosis"])
 
@@ -179,7 +183,9 @@ async def diagnose(
     response_model=DiagnosisResponse,
     summary="Active scanning pada URL target untuk mendeteksi kerentanan"
 )
+@limiter.limit("5/minute")  # Maks 5 scan per menit per IP
 async def active_scan(
+    http_request: Request,
     request: ScanRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

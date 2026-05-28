@@ -25,3 +25,4 @@ fakeredis[aioredis]>=2.23.0
 email-validator>=2.0.0
 gunicorn>=21.2.0
 beautifulsoup4>=4.12.0
+slowapi>=0.1.9
