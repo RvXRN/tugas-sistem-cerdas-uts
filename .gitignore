@@ -136,3 +136,9 @@ dmypy.json
 
 # idea
 .idea/
+
+# User exclusions
+GEMINI.md
+GEMINI2.md
+*.ipynb
+deploy/
