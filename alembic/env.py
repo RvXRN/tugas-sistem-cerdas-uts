@@ -17,7 +17,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app.database import Base
+from app.core.base import Base
 # Import all models to ensure they are registered with Base.metadata
 from app.models.user import User
 from app.models.attack import Attack
