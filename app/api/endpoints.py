@@ -18,7 +18,7 @@ from app.services.scanner_service import scan_url
 
 limiter = Limiter(key_func=get_remote_address)
 
-router = APIRouter(prefix="/api/v1", tags=["Diagnosis"])
+router = APIRouter(tags=["Diagnosis"])
 
 def _build_cache_key(request: DiagnosisRequest) -> str:
     sorted_symptoms = sorted(request.symptoms)

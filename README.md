@@ -316,3 +316,34 @@ supervisorctl stop cybersecurity_expert
 supervisorctl start cybersecurity_expert
 ```
 
+### Alternatif Deploy Sederhana (Satu File Supervisor)
+
+Bila Anda menginginkan konfigurasi yang lebih terpusat tanpa file `gunicorn_conf.py` yang terpisah, Anda bisa memasukkan flag Gunicorn (`-w`, `-k`, `--bind`) langsung di dalam command Supervisor.
+
+**Contoh file supervisor `.conf` tunggal:**
+```ini
+[program:cybersecurity_expert]
+directory=/var/www/cybersecurity-expert-system/backend
+; Konfigurasi Gunicorn langsung di baris command
+command=/var/www/cybersecurity-expert-system/backend/venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8081
+
+autostart=true
+autorestart=true
+user=ubuntu
+
+; Log langsung di folder project
+stderr_logfile=/var/www/cybersecurity-expert-system/backend/error.log
+stdout_logfile=/var/www/cybersecurity-expert-system/backend/access.log
+
+; Fix environment untuk virtualenv
+environment=PATH="/var/www/cybersecurity-expert-system/backend/venv/bin",HOME="/var/www/cybersecurity-expert-system/backend"
+
+stopsignal=TERM
+stopasgroup=true
+killasgroup=true
+```
+
+---
+
+## 📝 Changelog
+- **[Update]** Memperbaiki bug _double prefix_ pada route URL API (misal: `/api/v1/api/v1/detect`). Sekarang seluruh konfigurasi prefix dipusatkan di `app/main.py`, sehingga Endpoint Docs dan implementasi telah sesuai.

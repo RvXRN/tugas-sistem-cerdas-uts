@@ -66,6 +66,6 @@ app.add_middleware(
 # Register routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(endpoints.router, prefix="/api/v1", tags=["diagnosis"])
-app.include_router(attacks.router, prefix="/api/v1", tags=["attacks"])
-app.include_router(history.router, prefix="/api/v1", tags=["history"])
+app.include_router(attacks.router, prefix="/api/v1/attacks", tags=["attacks"])
+app.include_router(history.router, prefix="/api/v1/history", tags=["history"])
 app.include_router(datasets.router, prefix="/api/v1/datasets", tags=["datasets"])

@@ -14,7 +14,7 @@ from app.api.deps import get_current_user
 from app.repositories.user_repository import UserRepository
 from app.config.settings import settings
 
-router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
+router = APIRouter(tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse)
 async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
