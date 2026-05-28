@@ -233,18 +233,23 @@ async def diagnose(
 )
 @limiter.limit("5/minute")  # Maks 5 scan per menit per IP
 async def active_scan(
-    http_request: Request,
-    request: ScanRequest,
+    request: Request,
+    payload: ScanRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-    redis=Depends(get_redis)
 ):
     start_time = time.time()
-    url_str = str(request.url)
-    
-    # 1. Lakukan active scanning
-    extracted_symptoms = await scan_url(url_str)
-    
+    url_str = str(payload.url)
+
+    # 1. Lakukan active scanning — wrap try/except agar tidak meledak 500
+    try:
+        extracted_symptoms = await scan_url(url_str)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Scanner error: {str(e)}"
+        )
+
     # Jika tidak ada gejala yang ditemukan
     if not extracted_symptoms:
         session_id = str(uuid.uuid4())
@@ -253,7 +258,7 @@ async def active_scan(
             detected_attacks=[AttackResult(
                 attack_type="Safe / No Vulnerability Detected",
                 confidence=1.0,
-                description=f"Tidak ditemukan indikasi kerentanan XSS atau SQLi dari pemindaian dasar pada {url_str}.",
+                description=f"Tidak ditemukan indikasi kerentanan dari pemindaian dasar pada {url_str}.",
                 mitre_id=None
             )],
             defense_recommendations=[DefenseRecommendation(
@@ -309,13 +314,18 @@ async def active_scan(
         analysis_duration_ms=round(duration_ms, 2),
         from_cache=False
     )
-    
-    await HistoryRepository.create_consultation_history(db=db, 
-        session_id=session_id,
-        symptoms=extracted_symptoms,
-        target_system="web_server",
-        detected_attacks=[a.model_dump() for a in detected_attacks],
-        duration_ms=duration_ms
-    )
+
+    # Simpan ke history
+    try:
+        await HistoryRepository.create_consultation_history(
+            db=db,
+            session_id=session_id,
+            symptoms=extracted_symptoms,
+            target_system="web_server",
+            detected_attacks=[a.model_dump() for a in detected_attacks],
+            duration_ms=duration_ms
+        )
+    except Exception as e:
+        logger.warning(f"Gagal menyimpan history scan: {e}")
 
     return response
