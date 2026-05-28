@@ -241,3 +241,78 @@ uvicorn app.main:app --reload
 ```
 
 Server dummy ini mensimulasikan: SQL Injection, XSS, tanpa rate limiting (rentan Brute Force), banner disclosure, brand impersonation (Phishing), dan credential harvesting.
+
+---
+
+## 🚢 Deploy ke VPS (Production)
+
+### Stack Deployment
+
+```
+Internet → Nginx (Reverse Proxy) → Gunicorn (Port 8081)
+                                        └── UvicornWorker #1  (ASGI/async)
+                                        └── UvicornWorker #2
+                                        └── UvicornWorker #N
+```
+
+Gunicorn berperan sebagai **process manager** yang mengatur jumlah worker dan auto-restart, sedangkan **UvicornWorker** adalah ASGI worker yang menangani request async dari FastAPI.
+
+### Cara Deploy
+
+**1. Clone & masuk ke direktori:**
+```bash
+git clone https://github.com/RvXRN/tugas-sistem-cerdas-uts.git /var/www/cybersecurity-expert-system/backend
+cd /var/www/cybersecurity-expert-system/backend
+```
+
+**2. Buat file `.env`:**
+```bash
+cp .env.example .env   # atau buat manual
+nano .env
+```
+
+**3. Jalankan deploy script (satu perintah, semua otomatis):**
+```bash
+chmod +x deploy/deploy.sh
+./deploy/deploy.sh
+```
+
+Script `deploy.sh` akan otomatis:
+- ✅ Buat Python virtual environment
+- ✅ Install semua dependencies (`requirements.txt`)
+- ✅ Verifikasi Gunicorn & UvicornWorker terinstall
+- ✅ Jalankan migrasi database Alembic
+- ✅ Setup Supervisor config
+- ✅ Start Gunicorn sebagai daemon
+
+**4. Restart cepat (jika ada update kode):**
+```bash
+git pull
+./deploy/deploy.sh --restart
+```
+
+### File Konfigurasi Deploy
+
+| File | Fungsi |
+|---|---|
+| [`deploy/gunicorn_conf.py`](deploy/gunicorn_conf.py) | Konfigurasi Gunicorn: bind port, worker class, jumlah worker, timeout, log |
+| [`deploy/supervisor_app.conf`](deploy/supervisor_app.conf) | Konfigurasi Supervisor: autostart, autorestart, log rotation |
+| [`deploy/deploy.sh`](deploy/deploy.sh) | Script deploy lengkap (install + start) |
+
+### Perintah Berguna di VPS
+
+```bash
+# Cek status service
+supervisorctl status
+
+# Lihat log live
+supervisorctl tail -f cybersecurity_expert
+
+# Restart
+supervisorctl restart cybersecurity_expert
+
+# Stop / Start
+supervisorctl stop cybersecurity_expert
+supervisorctl start cybersecurity_expert
+```
+
