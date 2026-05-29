@@ -97,7 +97,7 @@ async def _run_engine(request: DiagnosisRequest) -> list:
                 "confidence": ml_res["confidence"],
                 "matched_symptoms": request.symptoms,
                 "description": ml_res.get("description", "Serangan terdeteksi oleh Machine Learning Engine."),
-                "mitre_id": ml_res.get("mitre_id"),
+                "mitre_id": ml_res.get("mitre_id") or _MITRE_FALLBACK.get(ml_res["attack_type"]),
                 "recommendations": ml_res.get("recommendations", []),
             })
 
