@@ -25,6 +25,10 @@ class DiagnosisRequest(BaseModel):
         default=None,
         description="Sistem yang diserang, contoh: 'web_server', 'database'"
     )
+    target_url: Optional[str] = Field(
+        default=None,
+        description="URL target jika relevan (misal untuk manual detection dengan target spesifik)"
+    )
     severity_hint: Optional[SeverityLevel] = Field(
         default=None,
         description="Estimasi tingkat keparahan dari analis (opsional)"
@@ -35,6 +39,7 @@ class DiagnosisRequest(BaseModel):
             "example": {
                 "symptoms": ["port_scanning", "brute_force_login", "unusual_outbound_traffic"],
                 "target_system": "web_server",
+                "target_url": "http://localhost:8081",
                 "severity_hint": "high"
             }
         }

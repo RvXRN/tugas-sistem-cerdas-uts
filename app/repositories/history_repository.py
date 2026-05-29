@@ -9,6 +9,7 @@ class HistoryRepository:
         session_id: str,
         symptoms: list,
         target_system: str,
+        target_url: str | None,
         detected_attacks: list,
         duration_ms: float
     ) -> ConsultationHistory:
@@ -16,6 +17,7 @@ class HistoryRepository:
             session_id=session_id,
             symptoms=symptoms,
             target_system=target_system,
+            target_url=target_url,
             detected_attacks=detected_attacks,
             duration_ms=duration_ms
         )

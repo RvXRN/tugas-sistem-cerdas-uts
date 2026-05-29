@@ -186,6 +186,7 @@ async def _handle_detect(
         session_id=session_id,
         symptoms=request.symptoms,
         target_system=request.target_system,
+        target_url=request.target_url,
         detected_attacks=[a.model_dump() for a in detected_attacks],
         duration_ms=duration_ms
     )
@@ -322,6 +323,7 @@ async def active_scan(
             session_id=session_id,
             symptoms=extracted_symptoms,
             target_system="web_server",
+            target_url=url_str,
             detected_attacks=[a.model_dump() for a in detected_attacks],
             duration_ms=duration_ms
         )
