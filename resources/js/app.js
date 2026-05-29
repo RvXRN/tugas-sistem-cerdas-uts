@@ -1,4 +1,3 @@
-import './bootstrap';
 import Alpine from 'alpinejs';
 import Chart from 'chart.js/auto';
 import Swal from 'sweetalert2';
@@ -7,7 +6,7 @@ window.Alpine = Alpine;
 window.Chart = Chart;
 window.Swal = Swal;
 
-const API_URL = 'https://api-cysec.bilikku.my.id/api/v1';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://api-cysec.bilikku.my.id/api/v1';
 
 window.api = {
     getHeaders(isJson = true) {
@@ -50,10 +49,13 @@ window.api = {
         }
     },
 
-    async login(username, password) {
+    async login(username, password, rememberMe = false) {
         const formData = new URLSearchParams();
         formData.append('username', username);
         formData.append('password', password);
+        if (rememberMe) {
+            formData.append('remember_me', 'true');
+        }
 
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',

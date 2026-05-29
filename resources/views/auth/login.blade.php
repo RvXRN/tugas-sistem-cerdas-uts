@@ -31,6 +31,14 @@
                        class="input-control" placeholder="Enter password">
             </div>
 
+            <div class="flex items-center justify-between mt-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" x-model="rememberMe" class="rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900 bg-gray-800">
+                    <span class="text-sm text-gray-400">Remember me</span>
+                </label>
+                <a href="#" @click.prevent="forgotPassword" class="text-sm text-blue-400 hover:text-blue-300 hover:underline">Forgot password?</a>
+            </div>
+
             <button type="submit" :disabled="isLoading" 
                     class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(37,99,235,0.4)] hover:shadow-[0_0_25px_rgba(37,99,235,0.6)] flex items-center justify-center gap-2">
                 <template x-if="isLoading">
@@ -53,16 +61,27 @@
             Alpine.data('loginForm', () => ({
                 username: '',
                 password: '',
+                rememberMe: false,
                 isLoading: false,
                 init() {
                     if(localStorage.getItem('access_token')) {
-                        window.location.href = '/';
+                        window.location.href = '/dashboard';
                     }
+                },
+                forgotPassword() {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Fitur Belum Tersedia',
+                        text: 'Fitur reset password masih dalam tahap pengembangan di sisi backend.',
+                        background: '#1e293b',
+                        color: '#fff',
+                        confirmButtonColor: '#3b82f6'
+                    });
                 },
                 async submit() {
                     this.isLoading = true;
                     try {
-                        await window.api.login(this.username, this.password);
+                        await window.api.login(this.username, this.password, this.rememberMe);
                         Swal.fire({
                             icon: 'success',
                             title: 'Login Success',
@@ -70,7 +89,7 @@
                             timer: 1500,
                             showConfirmButton: false
                         }).then(() => {
-                            window.location.href = '/';
+                            window.location.href = '/dashboard';
                         });
                     } catch (e) {
                         Swal.fire({
